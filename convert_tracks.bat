@@ -7,7 +7,9 @@ FOR /f "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0
 
 IF NOT EXIST output MKDIR output
 
-FOR /l %%i IN (1,1,%NUMTRACKS%) DO (
+IF "%FIRSTTRACK%" == "" SET FIRSTTRACK=1
+
+FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
     IF "!TRACK%%iFILE!" == "" SET TRACK%%iFILE=%TRACKPREFIX%-%%i.%INPUTFILETYPE%
     IF EXIST "!TRACK%%iFILE!" (
         FOR %%f IN ("!TRACK%%iFILE!") DO (SET TRACK%%iTITLE=%%~nf)
