@@ -57,6 +57,17 @@ FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         IF DEFINED DOTRIM SET TRACK%%iTRIM=rate trim !TRACK%%iSTART! !TRACK%%iTRIM!
 
         bin\sox.exe !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! !EFFECTS!
+        
+        IF NOT "!TRACK%%iSTARTOFFSET!" == "" (
+            bin\sox.exe "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-1.wav" gain -h -1  trim 0 !TRACK%%iSTARTOFFSET!s
+            bin\sox.exe "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-2.wav" gain -h -1  trim !TRACK%%iSTARTOFFSET!s
+            
+            DEL "output\!OUTPUTNAME!.wav"
+            
+            bin\sox.exe "output\__track-%%i-2.wav" "output\__track-%%i-1.wav" "output\!OUTPUTNAME!.wav" gain -h -1
+            
+            DEL "output\__track-%%i-*.wav"
+        )
 
         IF NOT "!TRACK%%iNORMALIZATION!" == "" bin\normalize.exe -a !TRACK%%iNORMALIZATION!dBFS "output\!OUTPUTNAME!.wav" 2> NUL
 
