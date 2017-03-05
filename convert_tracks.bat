@@ -3,7 +3,7 @@ SETLOCAL EnableDelayedExpansion
 
 IF EXIST "%~1" (SET CFGFILE="%~1") ELSE (SET CFGFILE=tracks.cfg)
 
-FOR /f "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
+FOR /F "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
 
 ECHO MSU-1 Conversion Script By Qwertymodo
 IF NOT "%GAMENAME%" == "" ECHO %GAMENAME%
@@ -17,7 +17,7 @@ IF NOT EXIST output MKDIR output
 
 IF "%FIRSTTRACK%" == "" SET FIRSTTRACK=1
 
-FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
+FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
     IF "!TRACK%%iFILE!" == "" SET TRACK%%iFILE=%TRACKPREFIX%-%%i.%INPUTFILETYPE%
     IF EXIST "!TRACK%%iFILE!" (
         FOR %%f IN ("!TRACK%%iFILE!") DO SET TRACK%%iTITLE=%%~nf
