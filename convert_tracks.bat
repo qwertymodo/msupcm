@@ -58,14 +58,34 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         )
         
         IF "%OUTPUTPREFIX%" == "" (SET OUTPUTNAME=!TRACK%%iTITLE!) ELSE (SET OUTPUTNAME=%OUTPUTPREFIX%-%%i)
-
-        IF "!TRACK%%iNORMALIZATION!" == "" SET TRACK%%iNORMALIZATION=%NORMALIZATION%
-        IF "!TRACK%%iSTART!" == "0" (SET TRACK%%iSTART=0s) ELSE (SET DOTRIM=1 & SET /A TRACK%%iLOOP=!TRACK%%iLOOP!-!TRACK%%iSTART! & SET TRACK%%iSTART=!TRACK%%iSTART!s)
-        IF NOT "!TRACK%%iTRIM!" == "" SET DOTRIM=1 & SET TRACK%%iTRIM==!TRACK%%iTRIM!s
         
-        IF DEFINED DOTRIM SET TRACK%%iTRIM=rate trim !TRACK%%iSTART! !TRACK%%iTRIM!
+        IF NOT "!TRACK%%iRENDERLOOPS!" == "" (
+            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_preloop.wav" rate trim !TRACK%%iSTART!s =!TRACK%%iLOOP!s
+            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_loop.wav" rate trim !TRACK%%iLOOP!s =!TRACK%%iTRIM!s
+            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_postloop.wav" rate trim !TRACK%%iTRIM!s
+            COPY "output\!OUTPUTNAME!_loop.wav" "output\!OUTPUTNAME!_renderloop.wav" > NUL
+            
+            FOR /L %%r IN (2,1,!TRACK%%iRENDERLOOPS!) DO (
+                %SOX% "output\!OUTPUTNAME!_loop.wav" "output\!OUTPUTNAME!_renderloop.wav" "output\!OUTPUTNAME!__renderloop.wav"
+                DEL "output\!OUTPUTNAME!_renderloop.wav"
+                REN "output\!OUTPUTNAME!__renderloop.wav" "!OUTPUTNAME!_renderloop.wav"
+            )
+            
+            %SOX% "output\!OUTPUTNAME!_preloop.wav" "output\!OUTPUTNAME!_renderloop.wav" "output\!OUTPUTNAME!_postloop.wav"  -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" !TRACK%%iEFFECTS! %EFFECTS%
+            SET TRACK%%iSTART=0
+            SET TRACK%%iLOOP=
+            SET TRACK%%iTRIM=
+            
+            DEL "output\!OUTPUTNAME!_*loop.wav"
+        ) ELSE (
+            IF "!TRACK%%iNORMALIZATION!" == "" SET TRACK%%iNORMALIZATION=%NORMALIZATION%
+            IF "!TRACK%%iSTART!" == "0" (SET TRACK%%iSTART=0s) ELSE (SET DOTRIM=1 & SET /A TRACK%%iLOOP=!TRACK%%iLOOP!-!TRACK%%iSTART! & SET TRACK%%iSTART=!TRACK%%iSTART!s)
+            IF NOT "!TRACK%%iTRIM!" == "" SET DOTRIM=1 & SET TRACK%%iTRIM==!TRACK%%iTRIM!s
+        
+            IF DEFINED DOTRIM SET TRACK%%iTRIM=rate trim !TRACK%%iSTART! !TRACK%%iTRIM!
 
-        %SOX% !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! %EFFECTS%
+            %SOX% !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! %EFFECTS%
+        )
         
         IF NOT "!TRACK%%iSTARTOFFSET!" == "" (
             %SOX% "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-1.wav" gain -h -1  trim 0 !TRACK%%iSTARTOFFSET!s
