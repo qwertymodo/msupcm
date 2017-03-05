@@ -20,7 +20,7 @@ IF "%FIRSTTRACK%" == "" SET FIRSTTRACK=1
 FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
     IF "!TRACK%%iFILE!" == "" SET TRACK%%iFILE=%TRACKPREFIX%-%%i.%INPUTFILETYPE%
     IF EXIST "!TRACK%%iFILE!" (
-        FOR %%f IN ("!TRACK%%iFILE!") DO SET TRACK%%iTITLE=%%~nf
+        IF "!TRACK%%iTITLE!" == "" FOR %%f IN ("!TRACK%%iFILE!") DO SET TRACK%%iTITLE=%%~nf
         ECHO Track %%i: !TRACK%%iTITLE!
         
         IF "!TRACK%%iSTART!" == "" SET TRACK%%iSTART=0
