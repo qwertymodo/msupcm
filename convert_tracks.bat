@@ -5,12 +5,13 @@ IF EXIST "%~1" (SET CFGFILE="%~1") ELSE (SET CFGFILE=tracks.cfg)
 
 FOR /f "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
 
+IF NOT EXIST output MKDIR output
+
 FOR /l %%i IN (1,1,%NUMTRACKS%) DO (
     IF "!TRACK%%iFILE!" == "" SET TRACK%%iFILE=%TRACKPREFIX%-%%i.%INPUTFILETYPE%
     IF EXIST "!TRACK%%iFILE!" (
         FOR %%f IN ("!TRACK%%iFILE!") DO (SET TRACK%%iTITLE=%%~nf)
         ECHO !TRACK%%iTITLE!
-        IF NOT EXIST output MKDIR output
         
         IF "!OUTPUTPREFIX!" == "" (SET OUTPUTNAME=!TRACK%%iTITLE!) ELSE (SET OUTPUTNAME=%OUTPUTPREFIX%-%%i)
 
