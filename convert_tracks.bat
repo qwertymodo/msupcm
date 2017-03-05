@@ -62,6 +62,7 @@ FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
 
         IF NOT "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=-l !TRACK%%iLOOP!
 
+        IF EXIST "output\!OUTPUTNAME!.pcm" DEL "output\!OUTPUTNAME!.pcm"
         bin\wav2msu.exe "output\!OUTPUTNAME!.wav" !TRACK%%iLOOP!
 
         DEL "output\!OUTPUTNAME!.wav"
