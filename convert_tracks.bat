@@ -26,6 +26,11 @@ FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         IF "!TRACK%%iSTART!" == "" SET TRACK%%iSTART=0
         IF "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=!TRACK%%iSTART!
         
+        IF /i !TRACK%%iSTART! GTR !TRACK%%iLOOP! (
+            SET /A TRACK%%iSTARTOFFSET=!TRACK%%iSTART!-!TRACK%%iLOOP!
+            SET TRACK%%iSTART=!TRACK%%iLOOP!
+        )
+        
         IF NOT "!TRACK%%iCROSSFADE!" == "" (
             SET /A TRACK%%iCROSSFADEASTART=!TRACK%%iTRIM!-!TRACK%%iCROSSFADE!
             SET /A TRACK%%iCROSSFADEBSTART=!TRACK%%iLOOP!-!TRACK%%iCROSSFADE!
