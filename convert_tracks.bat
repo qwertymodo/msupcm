@@ -1,6 +1,9 @@
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion
-FOR /f "delims=" %%x IN (tracks.cfg) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
+
+IF EXIST "%~1" (SET CFGFILE="%~1") ELSE (SET CFGFILE=tracks.cfg)
+
+FOR /f "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
 
 FOR /l %%i IN (1,1,%NUMTRACKS%) DO (
     IF "!TRACK%%iFILE!" == "" SET TRACK%%iFILE=%TRACKPREFIX%-%%i.%INPUTFILETYPE%
