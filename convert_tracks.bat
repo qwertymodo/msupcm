@@ -79,6 +79,28 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         )
 
         IF NOT "!TRACK%%iNORMALIZATION!" == "" %NORMALIZE% -a !TRACK%%iNORMALIZATION!dBFS "output\!OUTPUTNAME!.wav" 2> NUL
+        
+        IF NOT "!TRACK%%iINTROFILE!" == "" (
+            IF EXIST "!TRACK%%iINTROFILE!" (
+                IF NOT "!TRACK%%iINTROLENGTH!" == "" (
+                %SOX% "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_nointro.wav" pad !TRACK%%iINTROLENGTH!s
+                %SOX% "!TRACK%%iINTROFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_intro.wav" rate trim 0s =!TRACK%%iINTROLENGTH!s
+                
+                IF "!TRACK%%iINTRONORMALIZATION!" == "" SET TRACK%%iINTRONORMALIZATION=!TRACK%%iNORMALIZATION!
+                %NORMALIZE% -a !TRACK%%iINTRONORMALIZATION!dBFS "output\!OUTPUTNAME!_intro.wav" 2> NUL
+                
+                DEL "output\!OUTPUTNAME!.wav"
+                
+                %SOX% -m "output\!OUTPUTNAME!_intro.wav" "output\!OUTPUTNAME!_nointro.wav" "output\!OUTPUTNAME!.wav"
+                
+                DEL "output\!OUTPUTNAME!_*intro.wav"
+                
+                IF NOT "!TRACK%%iLOOP!" == "" SET /A TRACK%%iLOOP=!TRACK%%iLOOP!+!TRACK%%iINTROLENGTH!
+                )
+            ) ELSE (
+                ECHO WARNING: !TRACK%%iINTROFILE! not found.  Rendering track %%i without intro.
+            )
+        )
 
         IF NOT "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=-l !TRACK%%iLOOP!
 
