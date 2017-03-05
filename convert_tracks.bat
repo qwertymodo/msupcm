@@ -26,6 +26,28 @@ FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         IF "!TRACK%%iSTART!" == "" SET TRACK%%iSTART=0
         IF "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=!TRACK%%iSTART!
         
+        IF NOT "!TRACK%%iCROSSFADE!" == "" (
+            SET /A TRACK%%iCROSSFADEASTART=!TRACK%%iTRIM!-!TRACK%%iCROSSFADE!
+            SET /A TRACK%%iCROSSFADEBSTART=!TRACK%%iLOOP!-!TRACK%%iCROSSFADE!
+            SET /A TRACK%%iCROSSFADEOUT=!TRACK%%iCROSSFADE!/2
+
+            bin\sox "!TRACK%%iFILE!" -r 44.1k output\__track-%%i.wav ^
+                gain -h -1 rate trim 0 =!TRACK%%iTRIM!s ^
+                fade t 0 !TRACK%%iTRIM!s !TRACK%%iCROSSFADEOUT!s
+            bin\sox "!TRACK%%iFILE!" -r 44.1k output\__track-%%i_crossfade.wav ^
+                gain -h -1 rate trim !TRACK%%iCROSSFADEBSTART!s =!TRACK%%iLOOP!s ^
+                fade t !TRACK%%iCROSSFADE!s pad !TRACK%%iCROSSFADEASTART!s
+            FOR %%f IN ("!TRACK%%iFILE!") DO SET TRACK%%iFILE=output\___track-%%i.wav
+            bin\sox -m output\__track-%%i.wav output\__track-%%i_crossfade.wav "!TRACK%%iFILE!" gain -h -1
+
+            DEL output\__track-%%i*.wav
+        )
+        
+        IF NOT "!TRACK%%iSTARTPAD!" == "" (
+            SET /A TRACK%%iLOOP=!TRACK%%iLOOP!+!TRACK%%iSTARTPAD!
+            SET TRACK%%iEFFECTS=!TRACK%%iEFFECTS! pad !TRACK%%iSTARTPAD!s
+        )
+        
         IF "!OUTPUTPREFIX!" == "" (SET OUTPUTNAME=!TRACK%%iTITLE!) ELSE (SET OUTPUTNAME=%OUTPUTPREFIX%-%%i)
 
         IF "!TRACK%%iNORMALIZATION!" == "" SET TRACK%%iNORMALIZATION=%NORMALIZATION%
@@ -43,5 +65,6 @@ FOR /l %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         bin\wav2msu.exe "output\!OUTPUTNAME!.wav" !TRACK%%iLOOP!
 
         DEL "output\!OUTPUTNAME!.wav"
+        IF EXIST "output\___track-%%i.wav" DEL "output\___track-%%i.wav"
     )
 )
