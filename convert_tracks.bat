@@ -1,6 +1,10 @@
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion
 
+IF EXIST "sox.exe" (SET SOX=sox.exe) ELSE (IF EXIST "bin\sox.exe" (SET SOX=bin\sox.exe) ELSE (ECHO sox.exe not found. Download it at http://sox.sourceforge.net/ & EXIT /B 1))
+IF EXIST "normalize.exe" (SET NORMALIZE=normalize.exe) ELSE (IF EXIST "bin\normalize.exe" (SET NORMALIZE=bin\normalize.exe) ELSE (ECHO normalize.exe not found. Download it at http://normalize.nongnu.org/ & EXIT /B 1))
+IF EXIST "wav2msu.exe" (SET WAV2MSU=wav2msu.exe) ELSE (IF EXIST "bin\wav2msu.exe" (SET WAV2MSU=bin\wav2msu.exe) ELSE (ECHO wav2msu.exe not found. Download it at https://www.smwcentral.net/?p=section^&a=details^&id=4872 & EXIT /B 1))
+
 IF EXIST "%~1" (SET CFGFILE="%~1") ELSE (SET CFGFILE=tracks.cfg)
 
 FOR /F "usebackq delims=" %%x IN (!CFGFILE!) DO (SET line=%%x & IF NOT "!line:~0,1!" == "#" SET "%%x")
@@ -36,14 +40,14 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
             SET /A TRACK%%iCROSSFADEBSTART=!TRACK%%iLOOP!-!TRACK%%iCROSSFADE!
             SET /A TRACK%%iCROSSFADEOUT=!TRACK%%iCROSSFADE!/2
 
-            bin\sox "!TRACK%%iFILE!" -r 44.1k output\__track-%%i.wav ^
+            %SOX% "!TRACK%%iFILE!" -r 44.1k output\__track-%%i.wav ^
                 gain -h -1 rate trim 0 =!TRACK%%iTRIM!s ^
                 fade t 0 !TRACK%%iTRIM!s !TRACK%%iCROSSFADEOUT!s
-            bin\sox "!TRACK%%iFILE!" -r 44.1k output\__track-%%i_crossfade.wav ^
+            %SOX% "!TRACK%%iFILE!" -r 44.1k output\__track-%%i_crossfade.wav ^
                 gain -h -1 rate trim !TRACK%%iCROSSFADEBSTART!s =!TRACK%%iLOOP!s ^
                 fade t !TRACK%%iCROSSFADE!s pad !TRACK%%iCROSSFADEASTART!s
             FOR %%f IN ("!TRACK%%iFILE!") DO SET TRACK%%iFILE=output\___track-%%i.wav
-            bin\sox -m output\__track-%%i.wav output\__track-%%i_crossfade.wav "!TRACK%%iFILE!" gain -h -1
+            %SOX% -m output\__track-%%i.wav output\__track-%%i_crossfade.wav "!TRACK%%iFILE!" gain -h -1
 
             DEL output\__track-%%i*.wav
         )
@@ -61,25 +65,25 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         
         IF DEFINED DOTRIM SET TRACK%%iTRIM=rate trim !TRACK%%iSTART! !TRACK%%iTRIM!
 
-        bin\sox.exe !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! %EFFECTS%
+        %SOX% !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! %EFFECTS%
         
         IF NOT "!TRACK%%iSTARTOFFSET!" == "" (
-            bin\sox.exe "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-1.wav" gain -h -1  trim 0 !TRACK%%iSTARTOFFSET!s
-            bin\sox.exe "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-2.wav" gain -h -1  trim !TRACK%%iSTARTOFFSET!s
+            %SOX% "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-1.wav" gain -h -1  trim 0 !TRACK%%iSTARTOFFSET!s
+            %SOX% "output\!OUTPUTNAME!.wav" -e signed-integer -L -r 44.1k -b 16 "output\__track-%%i-2.wav" gain -h -1  trim !TRACK%%iSTARTOFFSET!s
             
             DEL "output\!OUTPUTNAME!.wav"
             
-            bin\sox.exe "output\__track-%%i-2.wav" "output\__track-%%i-1.wav" "output\!OUTPUTNAME!.wav" gain -h -1
+            %SOX% "output\__track-%%i-2.wav" "output\__track-%%i-1.wav" "output\!OUTPUTNAME!.wav" gain -h -1
             
             DEL "output\__track-%%i-*.wav"
         )
 
-        IF NOT "!TRACK%%iNORMALIZATION!" == "" bin\normalize.exe -a !TRACK%%iNORMALIZATION!dBFS "output\!OUTPUTNAME!.wav" 2> NUL
+        IF NOT "!TRACK%%iNORMALIZATION!" == "" %NORMALIZE% -a !TRACK%%iNORMALIZATION!dBFS "output\!OUTPUTNAME!.wav" 2> NUL
 
         IF NOT "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=-l !TRACK%%iLOOP!
 
         IF EXIST "output\!OUTPUTNAME!.pcm" DEL "output\!OUTPUTNAME!.pcm"
-        bin\wav2msu.exe "output\!OUTPUTNAME!.wav" !TRACK%%iLOOP!
+        %WAV2MSU% "output\!OUTPUTNAME!.wav" !TRACK%%iLOOP!
 
         DEL "output\!OUTPUTNAME!.wav"
         IF EXIST "output\___track-%%i.wav" DEL "output\___track-%%i.wav"
