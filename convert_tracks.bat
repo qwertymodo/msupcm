@@ -30,7 +30,13 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         IF "!TRACK%%iSTART!" == "" SET TRACK%%iSTART=0
         IF "!TRACK%%iLOOP!" == "" SET TRACK%%iLOOP=!TRACK%%iSTART!
         
-        IF /i !TRACK%%iSTART! GTR !TRACK%%iLOOP! (
+        IF NOT "!TRACK%%iFADEIN!" == "" SET TRACK%%iFADE=fade t !TRACK%%iFADEIN!s
+        IF NOT "!TRACK%%iFADEOUT!" == "" (
+            IF "!TRACK%%iFADE!" == "" SET TRACK%%iFADE=fade t 0 0
+            SET TRACK%%iFADE=!TRACK%%iFADE! !TRACK%%iFADEOUT!s
+        )
+        
+        IF /I !TRACK%%iSTART! GTR !TRACK%%iLOOP! (
             SET /A TRACK%%iSTARTOFFSET=!TRACK%%iSTART!-!TRACK%%iLOOP!
             SET TRACK%%iSTART=!TRACK%%iLOOP!
         )
@@ -60,9 +66,13 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         IF "%OUTPUTPREFIX%" == "" (SET OUTPUTNAME=!TRACK%%iTITLE!) ELSE (SET OUTPUTNAME=%OUTPUTPREFIX%-%%i)
         
         IF NOT "!TRACK%%iRENDERLOOPS!" == "" (
-            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_preloop.wav" rate trim !TRACK%%iSTART!s =!TRACK%%iLOOP!s
+            IF NOT "!TRACK%%iFADEIN!" == "" SET TRACK%%iFADEIN=fade t !TRACK%%iFADEIN!s
+            IF NOT "!TRACK%%iFADEOUT!" == "" SET TRACK%%iFADEOUT=fade t 0 0 !TRACK%%iFADEOUT!s
+            
+            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_preloop.wav" rate trim !TRACK%%iSTART!s =!TRACK%%iLOOP!s !TRACK%%iFADEIN!
             %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_loop.wav" rate trim !TRACK%%iLOOP!s =!TRACK%%iTRIM!s
-            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_postloop.wav" rate trim !TRACK%%iTRIM!s
+            %SOX% "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!_postloop.wav" rate trim !TRACK%%iTRIM!s !TRACK%%iFADEOUT!
+            
             COPY "output\!OUTPUTNAME!_loop.wav" "output\!OUTPUTNAME!_renderloop.wav" > NUL
             
             FOR /L %%r IN (2,1,!TRACK%%iRENDERLOOPS!) DO (
@@ -72,6 +82,7 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
             )
             
             %SOX% "output\!OUTPUTNAME!_preloop.wav" "output\!OUTPUTNAME!_renderloop.wav" "output\!OUTPUTNAME!_postloop.wav"  -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" !TRACK%%iEFFECTS! %EFFECTS%
+            
             SET TRACK%%iSTART=0
             SET TRACK%%iLOOP=
             SET TRACK%%iTRIM=
@@ -84,7 +95,7 @@ FOR /L %%i IN (%FIRSTTRACK%,1,%LASTTRACK%) DO (
         
             IF DEFINED DOTRIM SET TRACK%%iTRIM=rate trim !TRACK%%iSTART! !TRACK%%iTRIM!
 
-            %SOX% !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iEFFECTS! %EFFECTS%
+            %SOX% !TRACK%%iFORMAT! "!TRACK%%iFILE!" -e signed-integer -L -r 44.1k -b 16 "output\!OUTPUTNAME!.wav" gain -h -1 !TRACK%%iTRIM! !TRACK%%iFADE! !TRACK%%iEFFECTS! %EFFECTS%
         )
         
         IF NOT "!TRACK%%iSTARTOFFSET!" == "" (
